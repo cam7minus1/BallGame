@@ -6,8 +6,15 @@ class Blocks:
     def __init__(self):
         pass
 
-
 class Ball:
+
+    def __init__(self, x, y, speed_x, speed_y):
+        self.x = x
+        self.y = y
+        self.speed_x = speed_x
+        self.speed_y = speed_y
+
+class Assets:
 
     def __init__(self):
         pass
@@ -15,7 +22,7 @@ class Ball:
 
 class Paddle:
 
-    def __init__(self, screen, screen_dims, color=(0, 100, 200), y_anchor = 100 , size_tuple = (100, 25)):
+    def __init__(self, screen, screen_dims, color=(0, 100, 200) , size_tuple=(100, 25)):
 
         if screen is None:
             raise TypeError("Missing screen argument for paddle")
@@ -26,23 +33,42 @@ class Paddle:
         # Saved passed arguments for future reference
         self.color = color
         self.screen = screen
-        self.y_anchor = y_anchor
+        self.y_anchor = screen_dims[1] - size_tuple[1] - 5
         self.size_x = size_tuple[0]
         self.size_y = size_tuple[1]
         self.screen_size_x = screen_dims[0]
         self.screen_size_y = screen_dims[1]
-        self.x = 0
+        self.move_speed = 5
+        self.x = (self.screen_size_x)/2 - (self.size_x/2)
+        self.min_pos = 0
+        self.max_pos = self.screen_size_x - self.size_x
+        self.border_padding = 5
+
+    def move_left(self):
+
+        # Check miniumum bound
+        if self.x - self.move_speed < self.min_pos + self.border_padding:
+            return
+
+        self.x -= self.move_speed
+
+    def move_right(self):
+
+        # Check miniumum bound
+        if self.x + self.move_speed > self.max_pos - self.border_padding:
+            return
+
+        self.x += self.move_speed
 
     def update(self):
-        print("Drawing paddle")
         # Pos x, y size x y
-        udim_tuple = (self.size_x, self.y_anchor, self.size_x, self.size_y)
+        udim_tuple = (self.x, self.y_anchor, self.size_x, self.size_y)
         pygame.draw.rect(self.screen, self.color, udim_tuple)
 
 
 class Screen:
 
-    def __init__(self, window_width=450, window_height=300, title='default_name', background_color = (200, 200, 200)):
+    def __init__(self, window_width=450, window_height=300, title='default_name', background_color = (0, 0, 0)):
         self.background_color = background_color
         self.screen = pygame.display.set_mode((window_width, window_height))
         pygame.display.set_caption(title)
@@ -95,9 +121,11 @@ class Game:
 
     def _start_game(self):
 
+        key_a_down = False
+        key_d_down = False
+
         # Game loop
         while self.is_running:
-            print("Game loop")
 
             # Handle events
             for event in pygame.event.get():
@@ -106,7 +134,21 @@ class Game:
                 if event.type == pygame.KEYDOWN:
                     key = pygame.key.name(event.key)
                     if key == "a":
-                        print("a")
+                        key_a_down = True
+                    if key == "d":
+                        key_d_down = True
+                if event.type == pygame.KEYUP:
+                    key = pygame.key.name(event.key)
+                    if key == "a":
+                        key_a_down = False
+                    if key == "d":
+                        key_d_down = False
+
+            if key_a_down:
+                self.paddle.move_left()
+
+            if key_d_down:
+                self.paddle.move_right()
 
             # Wipe the screen
             self.screen_instance.screen_fill()
