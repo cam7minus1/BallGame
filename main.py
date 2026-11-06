@@ -8,15 +8,50 @@ class Blocks:
 
 class Ball:
 
-    def __init__(self, x, y, speed_x, speed_y):
+    def __init__(self, x, y, speed_x, speed_y, size=5):
         self.x = x
         self.y = y
+        self.size = size
         self.speed_x = speed_x
         self.speed_y = speed_y
+
+    def get_size(self):
+        return self.size, self.size
+
+    def get_position(self):
+        return self.x, self.y
+
+    def update(self):
+        self.x += self.speed_x
+        self.y += self.speed_y
+
+    def is_within_bounds(self, x, y, size_x, size_y):
+        min_pos_x = self.x
+        max_pos_x = self.x + self.size
+        min_pos_y = self.y
+        max_pos_y = self.y + self.size
+
+        sel_pos_min_x = x
+        sel_pos_max_x = x + size_x
+        sel_pos_min_y = y
+        sel_pos_max_y = y + size_y
+
+        if sel_pos_min_x >= min_pos_x and sel_pos_max_x <= max_pos_x and \
+            sel_pos_min_y >= min_pos_y and sel_pos_max_y <= max_pos_y:
+
+            return True
+
+        else:
+            return False
+
+
 
 class Assets:
 
     def __init__(self):
+        self.assets = []
+
+    def update(self):
         pass
 
 
@@ -162,6 +197,39 @@ class Game:
             # Wait to lock frames per second
             self.clock.tick(self.fps)
 
+def test_bounds():
+    # Test case one
+    # pos X, posY, 0, 0, size
+    a = Ball(1, 5, 0, 0, 3)
+    # pos X, posY, 0, 0, size
+    b = Ball(4, 4, 0, 0, 3)
+
+    size_a_x, size_a_y = a.get_size()
+    pos_a_x, pos_a_y = a.get_position()
+
+    if b.is_within_bounds(pos_a_x, pos_a_y, size_a_x, size_a_y) == True:
+        print("Failed bounds test 1")
+    else:
+        print("Pass")
+
+    # Test Case Two
+    # pos X, posY, 0, 0, size
+    a = Ball(1, 5, 0, 0, 3)
+    # pos X, posY, 0, 0, size
+    b = Ball(3, 7, 0, 0, 3)
+
+    size_a_x, size_a_y = a.get_size()
+    pos_a_x, pos_a_y = a.get_position()
+
+    if b.is_within_bounds(pos_a_x, pos_a_y, size_a_x, size_a_y) == False:
+        print("Failed bounds test 2")
+    else:
+        print("Pass")
+    
 
 if __name__ == "__main__":
-    Game()
+    # Game()
+
+    test_bounds()
+
+
