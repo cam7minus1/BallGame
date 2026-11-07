@@ -4,19 +4,30 @@ import pygame
 class Block:
 
     def __init__(self):
-        pass
+        self.hp = 10
 
     def __str__(self):
         return "Block"
 
+    def collide(self):
+        pass
+
+    def get_size(self):
+        pass
+
+    def get_position(self):
+        pass
+
 class Ball:
 
-    def __init__(self, x, y, speed_x, speed_y, size=5):
+    def __init__(self, screen, x, y, speed_x, speed_y, size=5):
+        self.screen = screen
         self.x = x
         self.y = y
         self.size = size
         self.speed_x = speed_x
         self.speed_y = speed_y
+        self.color = (255, 0, 0)
 
     def __str__(self):
         return f"Ball_{self.x}_{self.y}"
@@ -31,16 +42,35 @@ class Ball:
         self.x += self.speed_x
         self.y += self.speed_y
 
+        udim_tuple = (self.x, self.y, self.size, self.size)
+        center_tuple = (self.x, self.y)
+        pygame.draw.circle(self.screen, self.color, center_tuple, self.size)
+
+    def get_position(self):
+        return self.x, self.y
+
+    def get_size(self):
+        return self.size, self.size
+
+    def collide(self):
+        pass
+
 class Assets:
 
-    def __init__(self):
+    def __init__(self, screen, screen_width, screen_height):
         self.assets = []
+        self.screen = screen
+
+        self.x_min_bound = 0
+        self.x_max_bound = screen_width
+        self.y_min_bound = 0
+        self.y_max_bound = screen_height
 
     def __str__(self):
         return f"Assets {len(self.assets)}"
 
     def spawn_ball(self, x, y):
-        pass
+        self.assets.append(Ball(self.screen, x, y, 1, -1))
 
     def add_asset(self, asset):
 
@@ -76,10 +106,41 @@ class Assets:
 
     def update(self):
         for asset in self.assets:
+
+            # If ball check bounds and collisions
+            if isinstance(asset, Ball):
+
+                # Check boundaries X axis
+                if asset.x < self.x_min_bound or asset.x > self.x_max_bound :
+                    asset.speed_x *= -1
+
+                # Bounce of y top but not the bottom to let fallen die
+                if asset.y < self.y_min_bound:
+                    asset.speed_y *= -1
+
+                # Check other instances for collisions
+                for sel_asset in self.assets:
+
+                    if sel_asset is asset:
+                        continue
+
+                    size_a_x, size_a_y = sel_asset.get_size()
+                    pos_a_x, pos_a_y = sel_asset.get_position()
+                    size_b_x, size_b_y = asset.get_size()
+                    pos_b_x, pos_b_y = asset.get_position()
+                    
+                    if self.is_colliding(pos_a_x, pos_a_y, size_a_x, size_a_y, 
+                                        pos_b_x, pos_b_y, size_b_x, size_b_y) == True:
+                        asset.speed_x *= -1
+                        asset.speed_y *= -1
+
+            # Call each assets update function
             try:
                 asset.update()
             except AttributeError as e:
                 print(f"Attempted to call the update function but it does not exist for {self.asset} {e}")
+
+            
 
 
 class Paddle:
@@ -127,6 +188,12 @@ class Paddle:
         udim_tuple = (self.x, self.y_anchor, self.size_x, self.size_y)
         pygame.draw.rect(self.screen, self.color, udim_tuple)
 
+    def get_position(self):
+        return self.x, self.y_anchor
+    
+    def get_size(self):
+        return self.size_x, self.size_y
+
 
 class Screen:
 
@@ -142,7 +209,6 @@ class Screen:
         self.screen.fill(self.background_color)
 
     def update_screen(self):
-        print("Updating screen")
         # Draw all the items requested to draw
         pygame.display.flip()
 
@@ -176,8 +242,9 @@ class Game:
             return
 
         # Initiate the Assets class which holds balls and
-        self.assets = Assets()
+        self.assets = Assets(self.screen, self.window_width, self.window_height)
         self.assets.add_asset(self.paddle)
+        self.assets.spawn_ball(200, 150)
 
         # Run the main game loop
         self._start_game()
