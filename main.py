@@ -25,31 +25,36 @@ class Ball:
         self.x += self.speed_x
         self.y += self.speed_y
 
-    def is_within_bounds(self, x, y, size_x, size_y):
-        min_pos_x = self.x
-        max_pos_x = self.x + self.size
-        min_pos_y = self.y
-        max_pos_y = self.y + self.size
-
-        sel_pos_min_x = x
-        sel_pos_max_x = x + size_x
-        sel_pos_min_y = y
-        sel_pos_max_y = y + size_y
-
-        if sel_pos_min_x >= min_pos_x and sel_pos_max_x <= max_pos_x and \
-            sel_pos_min_y >= min_pos_y and sel_pos_max_y <= max_pos_y:
-
-            return True
-
-        else:
-            return False
-
-
-
 class Assets:
 
     def __init__(self):
         self.assets = []
+
+    def spawn_ball(self, x, y):
+        pass
+
+    def is_colliding(self, a_pos_x, a_pos_y, a_size_x, a_size_y, 
+                        b_pos_x, b_pos_y, b_size_x, b_size_y, ):
+
+        # Define x
+        a_x_start = a_pos_x
+        a_x_end = a_pos_x + a_size_x - 1
+        a_y_start = a_pos_y
+        a_y_end = a_pos_y + a_size_y - 1
+
+        # Define Y
+        b_x_start = b_pos_x
+        b_x_end = b_pos_x + b_size_x - 1
+        b_y_start = b_pos_y
+        b_y_end = b_pos_y + b_size_y - 1
+
+        # Check for collisions in the bounds
+        if b_x_start <= a_x_end and b_x_end >= a_x_start \
+            and b_y_start <= a_y_end and b_y_end >= a_y_start:
+
+            return True
+        else:
+            return False
 
     def update(self):
         pass
@@ -148,6 +153,8 @@ class Game:
             print(f"Failed to start game {type(e)} {e}")
             return
 
+        # Initiate the Assets class which holds balls and
+
         # Run the main game loop
         self._start_game()
 
@@ -204,10 +211,15 @@ def test_bounds():
     # pos X, posY, 0, 0, size
     b = Ball(4, 4, 0, 0, 3)
 
+    asset_instance = Assets()
+
     size_a_x, size_a_y = a.get_size()
     pos_a_x, pos_a_y = a.get_position()
-
-    if b.is_within_bounds(pos_a_x, pos_a_y, size_a_x, size_a_y) == True:
+    size_b_x, size_b_y = b.get_size()
+    pos_b_x, pos_b_y = b.get_position()
+    
+    if asset_instance.is_colliding(pos_a_x, pos_a_y, size_a_x, size_a_y, 
+                                   pos_b_x, pos_b_y, size_b_x, size_b_y) == True:
         print("Failed bounds test 1")
     else:
         print("Pass")
@@ -221,15 +233,17 @@ def test_bounds():
     size_a_x, size_a_y = a.get_size()
     pos_a_x, pos_a_y = a.get_position()
 
-    if b.is_within_bounds(pos_a_x, pos_a_y, size_a_x, size_a_y) == False:
+    size_b_x, size_b_y = b.get_size()
+    pos_b_x, pos_b_y = b.get_position()
+
+    if asset_instance.is_colliding(pos_a_x, pos_a_y, size_a_x, size_a_y, 
+                                   pos_b_x, pos_b_y, size_b_x, size_b_y,) == False:
         print("Failed bounds test 2")
     else:
         print("Pass")
     
 
 if __name__ == "__main__":
-    # Game()
+    Game()
 
-    test_bounds()
-
-
+    # test_bounds()
