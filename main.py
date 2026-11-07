@@ -1,10 +1,13 @@
 
 import pygame
 
-class Blocks:
+class Block:
 
     def __init__(self):
         pass
+
+    def __str__(self):
+        return "Block"
 
 class Ball:
 
@@ -14,6 +17,9 @@ class Ball:
         self.size = size
         self.speed_x = speed_x
         self.speed_y = speed_y
+
+    def __str__(self):
+        return f"Ball_{self.x}_{self.y}"
 
     def get_size(self):
         return self.size, self.size
@@ -30,8 +36,20 @@ class Assets:
     def __init__(self):
         self.assets = []
 
+    def __str__(self):
+        return f"Assets {len(self.assets)}"
+
     def spawn_ball(self, x, y):
         pass
+
+    def add_asset(self, asset):
+
+        if asset is None:
+            print("Attempted to add a None value to assets list!")
+            return
+
+        self.assets.append(asset)
+    
 
     def is_colliding(self, a_pos_x, a_pos_y, a_size_x, a_size_y, 
                         b_pos_x, b_pos_y, b_size_x, b_size_y, ):
@@ -57,7 +75,11 @@ class Assets:
             return False
 
     def update(self):
-        pass
+        for asset in self.assets:
+            try:
+                asset.update()
+            except AttributeError as e:
+                print(f"Attempted to call the update function but it does not exist for {self.asset} {e}")
 
 
 class Paddle:
@@ -154,12 +176,14 @@ class Game:
             return
 
         # Initiate the Assets class which holds balls and
+        self.assets = Assets()
+        self.assets.add_asset(self.paddle)
 
         # Run the main game loop
         self._start_game()
 
     def _update(self):
-        self.paddle.update()
+        self.assets.update()
 
     def _start_game(self):
 
