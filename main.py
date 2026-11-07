@@ -3,25 +3,49 @@ import pygame
 
 class Block:
 
-    def __init__(self):
-        self.hp = 10
+    def __init__(self, screen, destroy_callback, x, y, size, hp=3):
+        self.screen = screen
+        self.max_hp = hp
+        self.destroy_callback = destroy_callback
+        self.hp = hp
+        self.x = x
+        self.y = y
+        self.size = size
+        self.default_color = (0, 150, 0)
+        self.color = self.default_color
+        self.update_color()
 
     def __str__(self):
         return "Block"
 
-    def collide(self):
-        pass
+    def destroy(self):
+        self.destroy_callback(self)
+
+    def update_color(self):
+        ratio = self.hp/self.max_hp
+        self.color = (self.default_color[0] * ratio, self.self.default_color[1] * ratio, self.self.default_color[2] * ratio)
+
+    def update(self):
+        udim_tuple = (self.x, self.y_anchor, self.size_x, self.size_y)
+        pygame.draw.rect(self.screen, self.color, udim_tuple)
+
+    def ball_hit(self):
+        self.hp -= 1
+
+    def move_down(self):
+        self.y -= self.size
 
     def get_size(self):
-        pass
+        return self.size, self.size
 
     def get_position(self):
-        pass
+        return self.x, self.y
 
 class Ball:
 
-    def __init__(self, screen, x, y, speed_x, speed_y, size=5):
+    def __init__(self, screen, destroy_callback, x, y, speed_x, speed_y, size=5):
         self.screen = screen
+        self.destroy_callback = destroy_callback
         self.x = x
         self.y = y
         self.size = size
@@ -31,6 +55,9 @@ class Ball:
 
     def __str__(self):
         return f"Ball_{self.x}_{self.y}"
+
+    def destroy(self):
+        self.destroy_callback(self)
 
     def get_size(self):
         return self.size, self.size
@@ -66,11 +93,18 @@ class Assets:
         self.y_min_bound = 0
         self.y_max_bound = screen_height
 
+        self.count = 0
+        self.spawn_block_frequency = 60 * 10
+
     def __str__(self):
         return f"Assets {len(self.assets)}"
 
+    def remove_asset(self, asset):
+        print("removed asset")
+        self.assets.remove(asset)
+
     def spawn_ball(self, x, y):
-        self.assets.append(Ball(self.screen, x, y, 1, -1))
+        self.assets.append(Ball(self.screen, self.remove_asset, x, y, 1, -1))
 
     def add_asset(self, asset):
 
@@ -100,13 +134,28 @@ class Assets:
         if b_x_start <= a_x_end and b_x_end >= a_x_start \
             and b_y_start <= a_y_end and b_y_end >= a_y_start:
 
-            return True
+            # In this case A represents the ball, B another asset
+            delta_x, delta_y = 1, 1
+
+            if a_y_end > b_y_start or a_y_start < b_y_end:
+                delta_y = -1
+
+            if a_x_end < b_x_start or a_x_start > b_x_end:
+                delta_x = -1
+
+            return True, delta_x, delta_y
         else:
-            return False
+            return False, 1, 1
 
     def update(self):
-        for asset in self.assets:
 
+        # Spawn blocks if frequency
+        self.count += 1
+        if self.count > self.spawn_block_frequency:
+            self.count = 0
+            pass
+
+        for asset in self.assets:
             # If ball check bounds and collisions
             if isinstance(asset, Ball):
 
@@ -118,21 +167,27 @@ class Assets:
                 if asset.y < self.y_min_bound:
                     asset.speed_y *= -1
 
+                # Destroy the ball if out of bounds
+                if asset.y > self.y_max_bound:
+                    asset.destroy()
+
                 # Check other instances for collisions
                 for sel_asset in self.assets:
 
                     if sel_asset is asset:
                         continue
 
-                    size_a_x, size_a_y = sel_asset.get_size()
-                    pos_a_x, pos_a_y = sel_asset.get_position()
-                    size_b_x, size_b_y = asset.get_size()
-                    pos_b_x, pos_b_y = asset.get_position()
-                    
-                    if self.is_colliding(pos_a_x, pos_a_y, size_a_x, size_a_y, 
-                                        pos_b_x, pos_b_y, size_b_x, size_b_y) == True:
-                        asset.speed_x *= -1
-                        asset.speed_y *= -1
+                    size_a_x, size_a_y = asset.get_size()
+                    pos_a_x, pos_a_y = asset.get_position()
+                    size_b_x, size_b_y = sel_asset.get_size()
+                    pos_b_x, pos_b_y = sel_asset.get_position()
+
+                    colliding, x_delta, y_delta = self.is_colliding(pos_a_x, pos_a_y, size_a_x, size_a_y, 
+                                        pos_b_x, pos_b_y, size_b_x, size_b_y)
+
+                    if colliding:
+                        asset.speed_x *= x_delta
+                        asset.speed_y *= y_delta
 
             # Call each assets update function
             try:
@@ -308,9 +363,10 @@ def test_bounds():
     pos_a_x, pos_a_y = a.get_position()
     size_b_x, size_b_y = b.get_size()
     pos_b_x, pos_b_y = b.get_position()
-    
-    if asset_instance.is_colliding(pos_a_x, pos_a_y, size_a_x, size_a_y, 
-                                   pos_b_x, pos_b_y, size_b_x, size_b_y) == True:
+
+    colliding, _, _ = asset_instance.is_colliding(pos_a_x, pos_a_y, size_a_x, size_a_y, 
+                                   pos_b_x, pos_b_y, size_b_x, size_b_y)
+    if colliding:
         print("Failed bounds test 1")
     else:
         print("Pass")
@@ -327,8 +383,10 @@ def test_bounds():
     size_b_x, size_b_y = b.get_size()
     pos_b_x, pos_b_y = b.get_position()
 
-    if asset_instance.is_colliding(pos_a_x, pos_a_y, size_a_x, size_a_y, 
-                                   pos_b_x, pos_b_y, size_b_x, size_b_y,) == False:
+    colliding, _, _ = asset_instance.is_colliding(pos_a_x, pos_a_y, size_a_x, size_a_y, 
+                                   pos_b_x, pos_b_y, size_b_x, size_b_y,)
+
+    if not colliding:
         print("Failed bounds test 2")
     else:
         print("Pass")
